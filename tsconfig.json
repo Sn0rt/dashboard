@@ -29,5 +29,15 @@
         "**/*.ts",
         "**/*.tsx"
     ],
-    "exclude": ["node_modules", "frontend", "backend"]
+    "exclude": [
+        "node_modules",
+        "frontend",
+        "backend",
+        "apps",
+        "packages",
+        "deployment",
+        "hack",
+        ".turbo",
+        "tests"
+    ]
 }

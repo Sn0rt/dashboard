@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import DashboardShell from "../components/DashboardShell";
 
@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
             accessMode: "read-only",
             authRequired: false,
         },
+        logout: vi.fn(),
         user: null,
     },
 }));
@@ -29,6 +30,7 @@ describe("DashboardShell", () => {
                 accessMode: "read-only",
                 authRequired: false,
             },
+            logout: vi.fn(),
             user: null,
         };
     });
@@ -75,6 +77,7 @@ describe("DashboardShell", () => {
                 accessMode: "read-write",
                 authRequired: true,
             },
+            logout: vi.fn(),
             user: { displayName: "Administrator", username: "admin" },
         };
 
@@ -86,5 +89,51 @@ describe("DashboardShell", () => {
 
         expect(screen.queryByText("Read-write")).not.toBeInTheDocument();
         expect(screen.queryByText("Read-only mode")).not.toBeInTheDocument();
+    });
+
+    it("opens account actions in a menu and calls logout", () => {
+        const logout = vi.fn();
+        mocks.auth = {
+            accessMode: "read-write",
+            authConfig: {
+                accessMode: "read-write",
+                authRequired: true,
+            },
+            logout,
+            user: {
+                displayName: "Administrator",
+                email: "admin@example.com",
+                username: "admin",
+            },
+        };
+
+        render(
+            <DashboardShell>
+                <div>content</div>
+            </DashboardShell>,
+        );
+
+        expect(screen.queryByText("admin@example.com")).not.toBeInTheDocument();
+
+        fireEvent.click(
+            screen.getByRole("button", { name: /open account menu/i }),
+        );
+
+        const accountMenu = screen.getByRole("menu");
+        expect(
+            within(accountMenu).getByText("Administrator"),
+        ).toBeInTheDocument();
+        expect(
+            within(accountMenu).getByText("admin@example.com"),
+        ).toBeInTheDocument();
+        expect(
+            within(accountMenu).getByText("Read-write access"),
+        ).toBeInTheDocument();
+
+        fireEvent.click(
+            within(accountMenu).getByRole("menuitem", { name: /logout/i }),
+        );
+
+        expect(logout).toHaveBeenCalledTimes(1);
     });
 });

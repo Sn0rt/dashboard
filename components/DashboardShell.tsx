@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
     Box,
     Breadcrumbs,
+    Divider,
     Drawer,
     IconButton,
     List,
@@ -14,6 +15,8 @@ import {
     ListItemIcon,
     ListItemText,
     Link as MuiLink,
+    Menu,
+    MenuItem,
     Tooltip,
     Typography,
     useMediaQuery,
@@ -23,13 +26,11 @@ import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import DnsOutlinedIcon from "@mui/icons-material/DnsOutlined";
 import DeviceHubOutlinedIcon from "@mui/icons-material/DeviceHubOutlined";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import EventRepeatOutlinedIcon from "@mui/icons-material/EventRepeatOutlined";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import Inventory2OutlinedIcon from "@mui/icons-material/Inventory2Outlined";
 import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
-import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import MenuIcon from "@mui/icons-material/Menu";
 import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
 import WorkOutlineOutlinedIcon from "@mui/icons-material/WorkOutlineOutlined";
@@ -196,13 +197,27 @@ export default function DashboardShell({ children }) {
     const auth = useAuth();
     const [mounted, setMounted] = useState(false);
     const [open, setOpen] = useState(true);
-    const [adminOpen, setAdminOpen] = useState(false);
+    const [accountMenuAnchor, setAccountMenuAnchor] = useState(null);
     const [readOnlyBannerDismissed, setReadOnlyBannerDismissed] =
         useState(false);
     const isOverlayDrawer = mounted && overlayDrawerMatch;
     const showAdminMenu = auth?.authConfig?.authRequired !== false;
     const accessMode = auth?.accessMode || auth?.authConfig?.accessMode || "";
     const isReadOnly = accessMode === "read-only";
+    const accountUser = auth?.user || auth?.identity?.user || {};
+    const accountName =
+        accountUser.displayName ||
+        accountUser.username ||
+        auth?.identity?.username ||
+        "admin";
+    const accountEmail = accountUser.email || "";
+    const accountRole =
+        accessMode === "read-write"
+            ? "Read-write access"
+            : accessMode === "read-only"
+              ? "Read-only access"
+              : "Dashboard user";
+    const accountMenuOpen = Boolean(accountMenuAnchor);
 
     useEffect(() => {
         setMounted(true);
@@ -214,8 +229,16 @@ export default function DashboardShell({ children }) {
         );
     }, [isOverlayDrawer]);
 
+    const handleAccountMenuOpen = (event) => {
+        setAccountMenuAnchor(event.currentTarget);
+    };
+
+    const handleAccountMenuClose = () => {
+        setAccountMenuAnchor(null);
+    };
+
     const handleLogout = () => {
-        setAdminOpen(false);
+        handleAccountMenuClose();
         void auth?.logout?.();
     };
 
@@ -413,92 +436,124 @@ export default function DashboardShell({ children }) {
                     {footerItems.map(renderMenuItem)}
                 </List>
                 {showAdminMenu && (
-                    <ListItemButton
-                        aria-expanded={adminOpen}
-                        aria-label="Toggle admin menu"
-                        onClick={() => setAdminOpen((value) => !value)}
-                        sx={{
-                            alignItems: "center",
-                            borderRadius: "6px",
-                            display: "flex",
-                            gap: 1.25,
-                            justifyContent: open ? "space-between" : "center",
-                            minHeight: 34,
-                            mx: open ? 1.25 : 0.75,
-                            px: open ? 1.25 : 1,
-                            "&:hover": {
-                                backgroundColor: "rgba(0, 0, 0, 0.08)",
-                            },
-                        }}
+                    <Tooltip
+                        disableHoverListener={open}
+                        placement="right"
+                        title={accountName}
                     >
-                        <Box
-                            sx={{
-                                alignItems: "center",
-                                display: "flex",
-                                gap: 1,
-                            }}
-                        >
-                            <AccountCircleOutlinedIcon {...iconProps} />
-                            {open && (
-                                <Typography sx={{ fontSize: 13 }}>
-                                    admin
-                                </Typography>
-                            )}
-                        </Box>
-                        {open &&
-                            (adminOpen ? (
-                                <ExpandLessIcon {...iconProps} />
-                            ) : (
-                                <ExpandMoreIcon {...iconProps} />
-                            ))}
-                    </ListItemButton>
-                )}
-                {showAdminMenu && open && adminOpen && (
-                    <Box
-                        sx={{
-                            bgcolor: "#ffffff",
-                            border: "1px solid rgba(0, 0, 0, 0.12)",
-                            borderRadius: 1,
-                            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.12)",
-                            mx: 0.5,
-                            overflow: "hidden",
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                alignItems: "center",
-                                borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
-                                display: "flex",
-                                gap: 1,
-                                px: 1.5,
-                                py: 1.25,
-                            }}
-                        >
-                            <MailOutlineIcon {...iconProps} />
-                            <Box>
-                                <Typography sx={{ fontSize: 13 }}>
-                                    admin@example.com
-                                </Typography>
-                                <Typography
-                                    color="text.secondary"
-                                    sx={{ fontSize: 11 }}
-                                >
-                                    Cluster administrator
-                                </Typography>
-                            </Box>
-                        </Box>
                         <ListItemButton
-                            aria-label="logout"
-                            onClick={handleLogout}
-                            sx={{ gap: 1, minHeight: 40, px: 1.5 }}
+                            aria-controls={
+                                accountMenuOpen ? "account-menu" : undefined
+                            }
+                            aria-expanded={
+                                accountMenuOpen ? "true" : undefined
+                            }
+                            aria-haspopup="menu"
+                            aria-label="Open account menu"
+                            onClick={handleAccountMenuOpen}
+                            sx={{
+                                alignItems: "center",
+                                display: "flex",
+                                gap: 1.25,
+                                justifyContent: open
+                                    ? "space-between"
+                                    : "center",
+                                minHeight: 34,
+                                mx: open ? 1.25 : 0.75,
+                                px: open ? 1.25 : 1,
+                                borderRadius: "6px",
+                                "&:hover": {
+                                    backgroundColor: "rgba(0, 0, 0, 0.08)",
+                                },
+                            }}
                         >
-                            <LogoutOutlinedIcon {...iconProps} />
-                            <Typography sx={{ fontSize: 13 }}>
-                                Logout
-                            </Typography>
+                            <Box
+                                sx={{
+                                    alignItems: "center",
+                                    display: "flex",
+                                    gap: 1,
+                                    minWidth: 0,
+                                }}
+                            >
+                                <AccountCircleOutlinedIcon {...iconProps} />
+                                {open && (
+                                    <Typography noWrap sx={{ fontSize: 13 }}>
+                                        {accountName}
+                                    </Typography>
+                                )}
+                            </Box>
+                            {open && (
+                                <ExpandMoreIcon
+                                    sx={{
+                                        fontSize: 18,
+                                        transform: accountMenuOpen
+                                            ? "rotate(180deg)"
+                                            : "none",
+                                        transition: "transform 0.15s",
+                                    }}
+                                />
+                            )}
                         </ListItemButton>
-                    </Box>
+                    </Tooltip>
                 )}
+                <Menu
+                    anchorEl={accountMenuAnchor}
+                    anchorOrigin={{
+                        horizontal: "left",
+                        vertical: "top",
+                    }}
+                    id="account-menu"
+                    onClose={handleAccountMenuClose}
+                    open={accountMenuOpen}
+                    transformOrigin={{
+                        horizontal: "left",
+                        vertical: "bottom",
+                    }}
+                    slotProps={{
+                        paper: {
+                            sx: {
+                                border: "1px solid rgba(0, 0, 0, 0.12)",
+                                boxShadow:
+                                    "0 8px 24px rgba(15, 23, 42, 0.16)",
+                                minWidth: 236,
+                            },
+                        },
+                    }}
+                >
+                    <Box sx={{ px: 2, py: 1.25 }}>
+                        <Typography
+                            noWrap
+                            sx={{ fontSize: 14, fontWeight: 600 }}
+                        >
+                            {accountName}
+                        </Typography>
+                        {accountEmail && (
+                            <Typography
+                                color="text.secondary"
+                                noWrap
+                                sx={{ fontSize: 12, mt: 0.25 }}
+                            >
+                                {accountEmail}
+                            </Typography>
+                        )}
+                        <Typography
+                            color="text.secondary"
+                            noWrap
+                            sx={{ fontSize: 12, mt: 0.25 }}
+                        >
+                            {accountRole}
+                        </Typography>
+                    </Box>
+                    <Divider />
+                    <MenuItem
+                        aria-label="logout"
+                        onClick={handleLogout}
+                        sx={{ gap: 1, minHeight: 40 }}
+                    >
+                        <LogoutOutlinedIcon {...iconProps} />
+                        <Typography sx={{ fontSize: 13 }}>Logout</Typography>
+                    </MenuItem>
+                </Menu>
                 <img
                     src="/volcano-icon-color.svg"
                     alt="Volcano Logo"

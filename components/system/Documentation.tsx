@@ -1,5 +1,12 @@
 import React from "react";
-import { Box, Card, CardContent, Divider, Typography } from "@mui/material";
+import {
+    Box,
+    Card,
+    CardActionArea,
+    CardContent,
+    Divider,
+    Typography,
+} from "@mui/material";
 import CodeOutlinedIcon from "@mui/icons-material/CodeOutlined";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
@@ -7,22 +14,27 @@ import OpenInNewOutlinedIcon from "@mui/icons-material/OpenInNewOutlined";
 
 const documentCards = [
     {
-        title: "Dashboard Guide",
+        title: "User Guide",
         description:
-            "Understand the overview, queue health panels, and scheduler checks.",
+            "Read the Volcano user guide for workload management and scheduling workflows.",
+        href: "https://volcano.sh/docs/UserGuide/user_guide",
         icon: <MenuBookOutlinedIcon sx={{ fontSize: 20 }} />,
+        linkText: "Open user guide",
     },
     {
-        title: "Configuration Reference",
-        description:
-            "Review queue, policy, plugin, and preemption configuration fields.",
+        title: "Core Concepts",
+        description: "Review the Queue concept and how Volcano organizes jobs.",
+        href: "https://volcano.sh/docs/Concepts/Queue",
         icon: <DescriptionOutlinedIcon sx={{ fontSize: 20 }} />,
+        linkText: "Open queue concept",
     },
     {
-        title: "API Integration",
+        title: "API Documentation",
         description:
-            "Map the static wireframe data to backend and Kubernetes API endpoints.",
+            "Browse the Volcano Go API package reference for integration details.",
+        href: "https://pkg.go.dev/volcano.sh/apis",
         icon: <CodeOutlinedIcon sx={{ fontSize: 20 }} />,
+        linkText: "Open API docs",
     },
 ];
 
@@ -58,52 +70,65 @@ const Documentation = () => {
                         }}
                     >
                         {documentCards.map((card) => (
-                            <Box
+                            <Card
+                                component="article"
                                 key={card.title}
                                 sx={{
                                     border: "1px solid #e1e4e8",
                                     borderRadius: 1,
-                                    p: 2,
+                                    boxShadow: "none",
+                                    height: "100%",
                                 }}
                             >
-                                <Box
-                                    sx={{
-                                        alignItems: "center",
-                                        display: "flex",
-                                        gap: 1,
-                                        mb: 1,
-                                    }}
+                                <CardActionArea
+                                    component="a"
+                                    href={card.href}
+                                    rel="noreferrer"
+                                    sx={{ height: "100%", p: 2 }}
+                                    target="_blank"
                                 >
-                                    {card.icon}
-                                    <Typography
-                                        sx={{ fontSize: 16, fontWeight: 700 }}
+                                    <Box
+                                        sx={{
+                                            alignItems: "center",
+                                            display: "flex",
+                                            gap: 1,
+                                            mb: 1,
+                                        }}
                                     >
-                                        {card.title}
+                                        {card.icon}
+                                        <Typography
+                                            sx={{
+                                                fontSize: 16,
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            {card.title}
+                                        </Typography>
+                                    </Box>
+                                    <Typography
+                                        color="text.secondary"
+                                        sx={{ fontSize: 13 }}
+                                    >
+                                        {card.description}
                                     </Typography>
-                                </Box>
-                                <Typography
-                                    color="text.secondary"
-                                    sx={{ fontSize: 13 }}
-                                >
-                                    {card.description}
-                                </Typography>
-                                <Box
-                                    sx={{
-                                        alignItems: "center",
-                                        color: "primary.main",
-                                        display: "flex",
-                                        gap: 0.75,
-                                        mt: 2,
-                                    }}
-                                >
-                                    <Typography sx={{ fontSize: 13 }}>
-                                        Open documentation
-                                    </Typography>
-                                    <OpenInNewOutlinedIcon
-                                        sx={{ fontSize: 15 }}
-                                    />
-                                </Box>
-                            </Box>
+                                    <Box
+                                        sx={{
+                                            alignItems: "center",
+                                            color: "primary.main",
+                                            display: "flex",
+                                            gap: 0.75,
+                                            mt: 2,
+                                        }}
+                                    >
+                                        <Typography sx={{ fontSize: 13 }}>
+                                            {card.linkText}
+                                        </Typography>
+                                        <OpenInNewOutlinedIcon
+                                            sx={{ fontSize: 15 }}
+                                        />
+                                    </Box>
+                                </CardActionArea>
+                            </Card>
                         ))}
                     </Box>
                     <Box
@@ -115,16 +140,15 @@ const Documentation = () => {
                         }}
                     >
                         <Typography sx={{ fontSize: 16, fontWeight: 700 }}>
-                            Current Implementation Notes
+                            Official References
                         </Typography>
                         <Typography
                             color="text.secondary"
                             sx={{ fontSize: 13, mt: 1 }}
                         >
-                            Configuration, Settings, and Documentation currently
-                            render wireframe-aligned static content. Live
-                            backend integration can replace these local data
-                            blocks later without changing routes.
+                            These links open the upstream Volcano documentation
+                            for user workflows, scheduling concepts, and API
+                            packages.
                         </Typography>
                     </Box>
                 </CardContent>

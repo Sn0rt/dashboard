@@ -11,6 +11,7 @@
         "routes:audit": "node scripts/audit-api-routes.ts",
         "start": "tsx server.ts",
         "lint": "eslint .",
+        "check-types": "tsc --noEmit --pretty false",
         "test": "vitest --run",
         "test:watch": "vitest",
         "format": "prettier --write .",

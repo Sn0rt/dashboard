@@ -1,8 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import yaml from "js-yaml";
 
 const chartPath = "./helm/volcano-dashboard";
+const helmCommandTimeoutMs = 15000;
+const helmChartTestTimeoutMs = 20000;
+
+vi.setConfig({ testTimeout: helmChartTestTimeoutMs });
 
 const renderChart = (extraArgs: string[] = []) => {
     const rendered = execFileSync(
@@ -17,6 +21,7 @@ const renderChart = (extraArgs: string[] = []) => {
         ],
         {
             encoding: "utf8",
+            timeout: helmCommandTimeoutMs,
         },
     );
     return yaml.loadAll(rendered).filter(Boolean) as any[];

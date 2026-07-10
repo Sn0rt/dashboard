@@ -8,6 +8,7 @@
     "scripts": {
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
+        "test:resources": "tsc -p tsconfig.tests.json && node --test .test-dist/tests/*.test.js",
         "clean": "rimraf node_modules"
     },
     "dependencies": {

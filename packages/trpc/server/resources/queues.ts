@@ -10,6 +10,7 @@ import {
   getCustomResource,
   listCustomResources,
   patchCustomResource,
+  type CustomResourceClient,
 } from "./custom-resources";
 import { volcanoResources } from "./definitions";
 import {
@@ -18,41 +19,59 @@ import {
 } from "./pagination";
 import { dumpResourceYaml } from "./yaml";
 
-export async function listQueues(page: number, pageSize: number) {
+export async function listQueues(
+  page: number,
+  pageSize: number,
+  client?: CustomResourceClient,
+) {
   return fetchPaginatedResourceList(
     page,
     pageSize,
     async (limit, continueToken) => {
-      const response = await listCustomResources(volcanoResources.queue, {
-        limit,
-        continueToken,
-      });
+      const response = await listCustomResources(
+        volcanoResources.queue,
+        {
+          limit,
+          continueToken,
+        },
+        client,
+      );
       return extractResourceListPage(response);
     },
   );
 }
 
-export async function getQueue(name: string) {
-  return getCustomResource(volcanoResources.queue, name);
+export async function getQueue(name: string, client?: CustomResourceClient) {
+  return getCustomResource(volcanoResources.queue, name, undefined, client);
 }
 
-export async function getQueueYaml(name: string) {
-  return dumpResourceYaml(await getQueue(name));
+export async function getQueueYaml(
+  name: string,
+  client?: CustomResourceClient,
+) {
+  return dumpResourceYaml(await getQueue(name, client));
 }
 
-export async function listAllQueues() {
-  const response = await listCustomResources(volcanoResources.queue);
+export async function listAllQueues(client?: CustomResourceClient) {
+  const response = await listCustomResources(
+    volcanoResources.queue,
+    {},
+    client,
+  );
   return {
     items: response.items,
     totalCount: response.items.length,
   };
 }
 
-export async function createQueue(queueManifest: {
-  metadata: { name: string };
-  spec?: unknown;
-  [key: string]: unknown;
-}) {
+export async function createQueue(
+  queueManifest: {
+    metadata: { name: string };
+    spec?: unknown;
+    [key: string]: unknown;
+  },
+  client?: CustomResourceClient,
+) {
   if (!queueManifest.metadata.name || !queueManifest.spec) {
     throw new Error("Invalid queue manifest: name and spec are required");
   }
@@ -68,11 +87,13 @@ export async function createQueue(queueManifest: {
     const response = await createCustomResource(
       volcanoResources.queue,
       queueManifest,
+      undefined,
+      client,
     );
 
     return {
       message: "Queue created successfully",
-      data: response.body,
+      data: response,
     };
   } catch (error) {
     throw new Error(formatK8sApiError(error));
@@ -82,6 +103,7 @@ export async function createQueue(queueManifest: {
 export async function updateQueue(
   name: string,
   updatedBody: { spec?: Record<string, unknown> },
+  client?: CustomResourceClient,
 ) {
   if (!updatedBody.spec || Object.keys(updatedBody.spec).length === 0) {
     throw new Error("spec object is required and cannot be empty");
@@ -93,7 +115,7 @@ export async function updateQueue(
   }
 
   try {
-    await getQueue(name);
+    await getQueue(name, client);
   } catch {
     throw new Error(`Queue ${name} not found`);
   }
@@ -123,34 +145,38 @@ export async function updateQueue(
       volcanoResources.queue,
       name,
       patchOperations,
+      undefined,
+      client,
     );
-    const updatedQueue = await getQueue(name);
+    const updatedQueue = await getQueue(name, client);
 
     return {
       message: `Successfully updated queue ${name}`,
-      patchResponse: response.body,
-      updatedQueue: updatedQueue.body,
+      patchResponse: response,
+      updatedQueue,
     };
   } catch (error) {
     throw new Error(formatK8sApiError(error));
   }
 }
 
-export async function deleteQueue(name: string) {
+export async function deleteQueue(name: string, client?: CustomResourceClient) {
   const queueName = name.toLowerCase();
 
   if (isProtectedQueue(queueName)) {
     throw new Error(protectedQueueDeleteMessage(queueName));
   }
 
-  await getQueue(queueName);
+  await getQueue(queueName, client);
   const response = await deleteCustomResource(
     volcanoResources.queue,
     queueName,
+    undefined,
+    client,
   );
 
   return {
     message: "Queue deleted successfully",
-    data: response.body,
+    data: response,
   };
 }

@@ -1,3 +1,4 @@
+import type { CustomObjectsApi } from "@kubernetes/client-node";
 import { k8sApi } from "../utils/k8s";
 import type { CustomResourceDefinition } from "./definitions";
 
@@ -7,6 +8,22 @@ type ListOptions = {
   continueToken?: string;
   pretty?: string;
 };
+
+export type CustomResourceClient = Pick<
+  CustomObjectsApi,
+  | "listNamespacedCustomObject"
+  | "listClusterCustomObject"
+  | "getNamespacedCustomObject"
+  | "getClusterCustomObject"
+  | "createNamespacedCustomObject"
+  | "createClusterCustomObject"
+  | "replaceNamespacedCustomObject"
+  | "replaceClusterCustomObject"
+  | "patchNamespacedCustomObject"
+  | "patchClusterCustomObject"
+  | "deleteNamespacedCustomObject"
+  | "deleteClusterCustomObject"
+>;
 
 function requireNamespace(
   definition: CustomResourceDefinition,
@@ -24,6 +41,7 @@ function requireNamespace(
 export async function listCustomResources(
   definition: CustomResourceDefinition,
   options: ListOptions = {},
+  client: CustomResourceClient = k8sApi,
 ) {
   const common = {
     group: definition.apiGroup,
@@ -35,19 +53,20 @@ export async function listCustomResources(
   };
 
   if (definition.scope === "Namespaced" && options.namespace) {
-    return k8sApi.listNamespacedCustomObject({
+    return client.listNamespacedCustomObject({
       ...common,
       namespace: options.namespace,
     });
   }
 
-  return k8sApi.listClusterCustomObject(common);
+  return client.listClusterCustomObject(common);
 }
 
 export async function getCustomResource(
   definition: CustomResourceDefinition,
   name: string,
   namespace?: string,
+  client: CustomResourceClient = k8sApi,
 ) {
   const common = {
     group: definition.apiGroup,
@@ -57,19 +76,20 @@ export async function getCustomResource(
   };
 
   if (definition.scope === "Namespaced") {
-    return k8sApi.getNamespacedCustomObject({
+    return client.getNamespacedCustomObject({
       ...common,
       namespace: requireNamespace(definition, namespace),
     });
   }
 
-  return k8sApi.getClusterCustomObject(common);
+  return client.getClusterCustomObject(common);
 }
 
 export async function createCustomResource(
   definition: CustomResourceDefinition,
   body: object,
   namespace?: string,
+  client: CustomResourceClient = k8sApi,
 ) {
   const common = {
     group: definition.apiGroup,
@@ -79,13 +99,13 @@ export async function createCustomResource(
   };
 
   if (definition.scope === "Namespaced") {
-    return k8sApi.createNamespacedCustomObject({
+    return client.createNamespacedCustomObject({
       ...common,
       namespace: requireNamespace(definition, namespace),
     });
   }
 
-  return k8sApi.createClusterCustomObject(common);
+  return client.createClusterCustomObject(common);
 }
 
 export async function replaceCustomResource(
@@ -93,6 +113,7 @@ export async function replaceCustomResource(
   name: string,
   body: object,
   namespace?: string,
+  client: CustomResourceClient = k8sApi,
 ) {
   const common = {
     group: definition.apiGroup,
@@ -103,13 +124,13 @@ export async function replaceCustomResource(
   };
 
   if (definition.scope === "Namespaced") {
-    return k8sApi.replaceNamespacedCustomObject({
+    return client.replaceNamespacedCustomObject({
       ...common,
       namespace: requireNamespace(definition, namespace),
     });
   }
 
-  return k8sApi.replaceClusterCustomObject(common);
+  return client.replaceClusterCustomObject(common);
 }
 
 export async function patchCustomResource(
@@ -117,6 +138,7 @@ export async function patchCustomResource(
   name: string,
   body: object,
   namespace?: string,
+  client: CustomResourceClient = k8sApi,
 ) {
   const common = {
     group: definition.apiGroup,
@@ -127,19 +149,20 @@ export async function patchCustomResource(
   };
 
   if (definition.scope === "Namespaced") {
-    return k8sApi.patchNamespacedCustomObject({
+    return client.patchNamespacedCustomObject({
       ...common,
       namespace: requireNamespace(definition, namespace),
     });
   }
 
-  return k8sApi.patchClusterCustomObject(common);
+  return client.patchClusterCustomObject(common);
 }
 
 export async function deleteCustomResource(
   definition: CustomResourceDefinition,
   name: string,
   namespace?: string,
+  client: CustomResourceClient = k8sApi,
 ) {
   const common = {
     group: definition.apiGroup,
@@ -150,11 +173,11 @@ export async function deleteCustomResource(
   };
 
   if (definition.scope === "Namespaced") {
-    return k8sApi.deleteNamespacedCustomObject({
+    return client.deleteNamespacedCustomObject({
       ...common,
       namespace: requireNamespace(definition, namespace),
     });
   }
 
-  return k8sApi.deleteClusterCustomObject(common);
+  return client.deleteClusterCustomObject(common);
 }

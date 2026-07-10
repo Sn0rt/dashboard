@@ -6,6 +6,7 @@ import {
   getCustomResource,
   listCustomResources,
   replaceCustomResource,
+  type CustomResourceClient,
 } from "./custom-resources";
 import { volcanoResources } from "./definitions";
 import {
@@ -45,33 +46,53 @@ export function getJobState(job: Job) {
   return "Unknown";
 }
 
-export async function listJobs(page: number, pageSize: number) {
+export async function listJobs(
+  page: number,
+  pageSize: number,
+  client?: CustomResourceClient,
+) {
   return fetchPaginatedResourceList(
     page,
     pageSize,
     async (limit, continueToken) => {
-      const response = await listCustomResources(volcanoResources.job, {
-        limit,
-        continueToken,
-        pretty: "true",
-      });
+      const response = await listCustomResources(
+        volcanoResources.job,
+        {
+          limit,
+          continueToken,
+          pretty: "true",
+        },
+        client,
+      );
       return extractResourceListPage(response);
     },
   );
 }
 
-export async function getJob(namespace: string, name: string) {
-  return getCustomResource(volcanoResources.job, name, namespace);
+export async function getJob(
+  namespace: string,
+  name: string,
+  client?: CustomResourceClient,
+) {
+  return getCustomResource(volcanoResources.job, name, namespace, client);
 }
 
-export async function getJobYaml(namespace: string, name: string) {
-  return dumpResourceYaml(await getJob(namespace, name));
+export async function getJobYaml(
+  namespace: string,
+  name: string,
+  client?: CustomResourceClient,
+) {
+  return dumpResourceYaml(await getJob(namespace, name, client));
 }
 
-export async function listAllJobs() {
-  const response = await listCustomResources(volcanoResources.job, {
-    pretty: "true",
-  });
+export async function listAllJobs(client?: CustomResourceClient) {
+  const response = await listCustomResources(
+    volcanoResources.job,
+    {
+      pretty: "true",
+    },
+    client,
+  );
 
   const jobs = (response.items as Job[]).map((job) => ({
     ...job,
@@ -93,11 +114,14 @@ export async function listAllJobs() {
   };
 }
 
-export async function createJob(jobManifest: {
-  metadata: { name: string; namespace?: string };
-  spec?: unknown;
-  [key: string]: unknown;
-}) {
+export async function createJob(
+  jobManifest: {
+    metadata: { name: string; namespace?: string };
+    spec?: unknown;
+    [key: string]: unknown;
+  },
+  client?: CustomResourceClient,
+) {
   if (!jobManifest.metadata.name || !jobManifest.spec) {
     throw new Error("Invalid job manifest: name and spec are required");
   }
@@ -114,11 +138,12 @@ export async function createJob(jobManifest: {
       volcanoResources.job,
       jobManifest,
       namespace,
+      client,
     );
 
     return {
       message: "Job created successfully",
-      data: response.body,
+      data: response,
     };
   } catch (error) {
     throw new Error(formatK8sApiError(error));
@@ -131,8 +156,9 @@ export async function updateJob(
   patchData: Record<string, unknown> & {
     metadata?: Record<string, unknown>;
   },
+  client?: CustomResourceClient,
 ) {
-  const currentJob = (await getJob(namespace, name)) as Job &
+  const currentJob = (await getJob(namespace, name, client)) as Job &
     Record<string, unknown>;
   const updatedJob = {
     ...currentJob,
@@ -151,23 +177,29 @@ export async function updateJob(
     name,
     updatedJob,
     namespace,
+    client,
   );
 
   return {
     message: "Job updated successfully",
-    data: response.body,
+    data: response,
   };
 }
 
-export async function deleteJob(namespace: string, name: string) {
+export async function deleteJob(
+  namespace: string,
+  name: string,
+  client?: CustomResourceClient,
+) {
   const response = await deleteCustomResource(
     volcanoResources.job,
     name,
     namespace,
+    client,
   );
 
   return {
     message: "Job deleted successfully",
-    data: response.body,
+    data: response,
   };
 }

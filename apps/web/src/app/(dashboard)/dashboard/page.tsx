@@ -11,7 +11,7 @@ export default function DashboardPage() {
           </h1>
         </div>
       </section>
-      <hr className="max-w-x" />
+      <hr />
       <DashboardUtils />
     </ScrollArea>
   );

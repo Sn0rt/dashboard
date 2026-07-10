@@ -1,4 +1,4 @@
-import type { V1Pod, V1PodSpec } from "@kubernetes/client-node";
+import type { CoreV1Api, V1Pod, V1PodSpec } from "@kubernetes/client-node";
 import { k8sCoreApi } from "../utils/k8s";
 import {
   extractResourceListPage,
@@ -18,12 +18,26 @@ type PodPatch = {
   };
 };
 
-export async function listPods(page: number, pageSize: number) {
+export type PodResourceClient = Pick<
+  CoreV1Api,
+  | "listPodForAllNamespaces"
+  | "readNamespacedPod"
+  | "listNamespacedPod"
+  | "createNamespacedPod"
+  | "replaceNamespacedPod"
+  | "deleteNamespacedPod"
+>;
+
+export async function listPods(
+  page: number,
+  pageSize: number,
+  client: PodResourceClient = k8sCoreApi,
+) {
   return fetchPaginatedResourceList<V1Pod>(
     page,
     pageSize,
     async (limit, continueToken) => {
-      const response = await k8sCoreApi.listPodForAllNamespaces({
+      const response = await client.listPodForAllNamespaces({
         limit,
         ...(continueToken && { continue: continueToken }),
       });
@@ -36,16 +50,24 @@ export async function listPods(page: number, pageSize: number) {
   );
 }
 
-export async function getPod(namespace: string, name: string) {
-  return k8sCoreApi.readNamespacedPod({ name, namespace });
+export async function getPod(
+  namespace: string,
+  name: string,
+  client: PodResourceClient = k8sCoreApi,
+) {
+  return client.readNamespacedPod({ name, namespace });
 }
 
-export async function getPodYaml(namespace: string, name: string) {
-  return dumpResourceYaml(await getPod(namespace, name));
+export async function getPodYaml(
+  namespace: string,
+  name: string,
+  client: PodResourceClient = k8sCoreApi,
+) {
+  return dumpResourceYaml(await getPod(namespace, name, client));
 }
 
-export async function listAllPods() {
-  const response = await k8sCoreApi.listNamespacedPod({
+export async function listAllPods(client: PodResourceClient = k8sCoreApi) {
+  const response = await client.listNamespacedPod({
     namespace: "default",
   });
   return {
@@ -54,9 +76,12 @@ export async function listAllPods() {
   };
 }
 
-export async function createPod(podManifest: unknown) {
+export async function createPod(
+  podManifest: unknown,
+  client: PodResourceClient = k8sCoreApi,
+) {
   const pod = podManifest as V1Pod;
-  const response = await k8sCoreApi.createNamespacedPod({
+  const response = await client.createNamespacedPod({
     namespace: pod.metadata?.namespace || "default",
     body: pod,
   });
@@ -71,8 +96,9 @@ export async function updatePod(
   namespace: string,
   name: string,
   patchData: PodPatch,
+  client: PodResourceClient = k8sCoreApi,
 ) {
-  const currentPod = await getPod(namespace, name);
+  const currentPod = await getPod(namespace, name, client);
   const updatedSpec = {
     ...currentPod.spec,
   } as V1PodSpec;
@@ -123,7 +149,7 @@ export async function updatePod(
     spec: updatedSpec,
   };
 
-  const response = await k8sCoreApi.replaceNamespacedPod({
+  const response = await client.replaceNamespacedPod({
     name,
     namespace,
     body: updatedPod,
@@ -135,8 +161,12 @@ export async function updatePod(
   };
 }
 
-export async function deletePod(namespace: string, name: string) {
-  const response = await k8sCoreApi.deleteNamespacedPod({ name, namespace });
+export async function deletePod(
+  namespace: string,
+  name: string,
+  client: PodResourceClient = k8sCoreApi,
+) {
+  const response = await client.deleteNamespacedPod({ name, namespace });
 
   return {
     message: "Pod deleted successfully",
